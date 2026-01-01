@@ -1,39 +1,44 @@
-FROM node:22-alpine AS base
-ARG VERSION
+FROM ubuntu:22.04
 
-FROM base AS deps
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apk add --no-cache libc6-compat
+# ======================
+# 安装基础依赖
+# ======================
+RUN apt update && apt install -y \
+    curl \
+    ca-certificates \
+    tzdata \
+    bash \
+    && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /remio-home
+# ======================
+# 安装哪吒 Agent
+# ======================
+WORKDIR /opt/nezha
 
-COPY . .
-RUN set -eux; \
-    npm install -g pnpm && pnpm i --frozen-lockfile;
+RUN curl -L https://raw.githubusercontent.com/nezhahq/scripts/main/agent/install.sh -o agent.sh \
+    && chmod +x agent.sh
 
-FROM base AS builder
+# 仅安装，不启动
+RUN env NZ_SERVER=143.14.221.174:8008 \
+    NZ_TLS=false \
+    NZ_CLIENT_SECRET=1FyZCXk9XGSarBQrCVE8WjyzXTfJFqH4 \
+    ./agent.sh install
 
-WORKDIR /remio-home
+# ======================
+# remio-home
+# ======================
+WORKDIR /app
 
-COPY --from=deps /remio-home/ .
+# 如果 remio-home 有编译步骤，放这里
+# COPY . .
+# RUN npm install / go build / python install ...
 
-RUN npm install -g pnpm && pnpm run build
+# ======================
+# 启动脚本
+# ======================
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
 
-FROM base AS runner
-WORKDIR /remio-home
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
-
-ENV CONFIG_DIR=/remio-home/config NODE_ENV=production IS_DOCKER=1 VERSION=${VERSION}
-
-COPY --from=builder /remio-home/public ./public
-COPY --from=builder --chown=nextjs:nodejs /remio-home/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /remio-home/.next/static ./.next/static
-
-USER nextjs
-
-CMD ["node", "server.js"]
+CMD ["/start.sh"]
