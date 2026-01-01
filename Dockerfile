@@ -1,48 +1,70 @@
-FROM ubuntu:22.04
+# =========================
+# 1️⃣ Build 阶段
+# =========================
+FROM node:18 AS builder
 
-ENV DEBIAN_FRONTEND=noninteractive
+WORKDIR /app
 
-# ======================
-# 安装基础依赖
-# ======================
-RUN apt update && apt install -y \
+# 复制依赖文件
+COPY package.json package-lock.json* yarn.lock* pnpm-lock.yaml* ./
+
+# 安装依赖
+RUN if [ -f yarn.lock ]; then yarn install --frozen-lockfile; \
+    elif [ -f pnpm-lock.yaml ]; then corepack enable && pnpm install --frozen-lockfile; \
+    else npm ci; \
+    fi
+
+# 复制源码
+COPY . .
+
+# 构建 Next.js
+RUN npm run build
+
+# =========================
+# 2️⃣ 运行阶段
+# =========================
+FROM node:18-slim
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# 安装哪吒 Agent 依赖
+RUN apt-get update && apt-get install -y \
+    unzip \
     curl \
+    bash \
     ca-certificates \
     tzdata \
-    bash \
     && rm -rf /var/lib/apt/lists/*
 
 # =========================
-# 哪吒 Agent 安装
+# 安装哪吒 Agent
 # =========================
 WORKDIR /opt/nezha
 
-# 安装依赖
-RUN apk add --no-cache bash curl ca-certificates tzdata unzip
-
-# 下载 agent.sh
 RUN curl -L https://raw.githubusercontent.com/nezhahq/scripts/main/agent/install.sh -o agent.sh \
     && chmod +x agent.sh
 
-# 仅安装，不启动
+# 仅安装 agent，不启动
 RUN env NZ_SERVER=143.14.221.174:8008 \
     NZ_TLS=false \
     NZ_CLIENT_SECRET=1FyZCXk9XGSarBQrCVE8WjyzXTfJFqH4 \
     ./agent.sh install
 
-# ======================
-# remio-home
-# ======================
+# =========================
+# Next.js 运行文件
+# =========================
 WORKDIR /app
 
-# 如果 remio-home 有编译步骤，放这里
-# COPY . .
-# RUN npm install / go build / python install ...
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.js ./next.config.js
 
-# ======================
 # 启动脚本
-# ======================
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
+EXPOSE 3000
 CMD ["/start.sh"]
