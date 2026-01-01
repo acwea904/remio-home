@@ -38,7 +38,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # =========================
-# 安装哪吒 Agent
+# 哪吒 Agent 安装
 # =========================
 WORKDIR /opt/nezha
 
@@ -60,7 +60,6 @@ COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.js ./next.config.js
 
 # 启动脚本
 COPY start.sh /start.sh
