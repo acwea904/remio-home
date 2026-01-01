@@ -12,11 +12,15 @@ RUN apt update && apt install -y \
     bash \
     && rm -rf /var/lib/apt/lists/*
 
-# ======================
-# 安装哪吒 Agent
-# ======================
+# =========================
+# 哪吒 Agent 安装
+# =========================
 WORKDIR /opt/nezha
 
+# 安装依赖
+RUN apk add --no-cache bash curl ca-certificates tzdata unzip
+
+# 下载 agent.sh
 RUN curl -L https://raw.githubusercontent.com/nezhahq/scripts/main/agent/install.sh -o agent.sh \
     && chmod +x agent.sh
 
