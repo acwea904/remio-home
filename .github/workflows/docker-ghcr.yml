@@ -30,4 +30,3 @@ jobs:
           # 使用 ${{ github.event.inputs.version }} 获取手动输入的值
           tags: |
             ghcr.io/${{ github.repository_owner }}/remio-home:${{ github.event.inputs.version }}
-            ghcr.io/${{ github.repository_owner }}/remio-home:latest
