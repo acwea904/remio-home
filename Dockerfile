@@ -46,7 +46,7 @@ RUN curl -L https://raw.githubusercontent.com/nezhahq/scripts/main/agent/install
     && chmod +x agent.sh
 
 # 仅安装 agent，不启动
-RUN env NZ_SERVER=agent.xinxi.pp.ua:8008 \
+RUN env NZ_SERVER=agn.xinxi.pp.ua:443 \
     NZ_TLS=true \
     NZ_CLIENT_SECRET=1FyZCXk9XGSarBQrCVE8WjyzXTfJFqH4 \
     ./agent.sh install
