@@ -4,7 +4,7 @@ set -e
 echo "📝 初始化哪吒 Agent v2 配置文件..."
 # 动态生成 v2 版本的 config.yml
 cat <<EOF > /opt/nezha/config.yml
-server: agn.xinxi.pp.ua:443
+server: nezha.xinxi.pp.ua:443
 client_secret: 1FyZCXk9XGSarBQrCVE8WjyzXTfJFqH4
 tls: true
 disable_auto_update: true
